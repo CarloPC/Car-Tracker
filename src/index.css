@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme {
+  /* -- Color tokens: instrument-cluster palette -- */
+  --color-base: #14171c;
+  --color-surface: #1b1f27;
+  --color-surface-2: #232833;
+  --color-border: #2a2f3a;
+  --color-border-soft: #232833;
+
+  --color-ink: #edeff3;
+  --color-ink-muted: #8b92a3;
+  --color-ink-faint: #565d6d;
+
+  --color-amber: #f2a93b;
+  --color-amber-dim: #7a5a26;
+  --color-teal: #4fd1a5;
+  --color-teal-dim: #1f4f42;
+  --color-coral: #f2545b;
+  --color-coral-dim: #5a2529;
+  --color-blue: #5b9df2;
+
+  /* -- Type -- */
+  --font-display: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  background-image:
+    radial-gradient(circle at 15% -10%, rgba(242, 169, 59, 0.08), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(91, 157, 242, 0.06), transparent 40%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: #14171c;
+}
+
+.font-mono {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-faint); }
+
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.input {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-border);
+  background-color: var(--color-surface-2);
+  color: var(--color-ink);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.875rem;
+}
+.input:focus {
+  border-color: var(--color-amber);
+}
+
+.punch-edge {
+  background-image: radial-gradient(circle, var(--color-base) 2.5px, transparent 2.6px);
+  background-size: 14px 14px;
+  background-position: -4px center;
+  height: 10px;
+}
