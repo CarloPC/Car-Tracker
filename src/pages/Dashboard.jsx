@@ -187,7 +187,7 @@ function EmptyState() {
       </div>
       <h2 className="font-display text-lg font-semibold">Add your first vehicle</h2>
       <p className="mt-1 max-w-sm text-sm text-ink-muted">
-        Mileway tracks what you bought a car for, what you spent fixing it up, and what you sold it for. Start by adding one from the Vehicles tab.
+        Sakyanan tracks what you bought a car for, what you spent fixing it up, and what you sold it for. Start by adding one from the Vehicles tab.
       </p>
       <Link
         to="/vehicles"

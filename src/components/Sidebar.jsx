@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Gauge, Receipt, BarChart3, Car, LogOut } from "lucide-react";
+import { Receipt, BarChart3, Car, LogOut, Gauge } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const links = [
@@ -21,11 +21,9 @@ export default function Sidebar() {
   return (
     <aside className="hidden lg:flex w-64 flex-col border-r border-border bg-surface">
       <div className="flex items-center gap-2 px-5 py-5">
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ background: "rgba(242,169,59,0.15)" }}>
-          <Gauge className="h-5 w-5" style={{ color: "var(--color-amber)" }} />
-        </div>
+        <img src="/pwa-192x192.png" alt="Sakyanan" className="h-9 w-9 rounded-lg object-contain" />
         <div>
-          <div className="font-display text-base font-semibold leading-none">Mileway</div>
+          <div className="font-display text-base font-semibold leading-none">Sakyanan</div>
           <div className="mt-1 text-[11px] uppercase tracking-wider text-ink-muted">Buy &amp; sell car ledger</div>
         </div>
       </div>

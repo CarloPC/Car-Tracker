@@ -9,8 +9,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Mileway',
-        short_name: 'Mileway',
+        name: 'Sakyanan',
+        short_name: 'Sakyanan',
         description: 'Buy & sell car ledger',
         theme_color: '#14171c',
         background_color: '#14171c',
