@@ -8,9 +8,6 @@ export default function TopBar({ title, subtitle, onMenu, onAdd, addLabel = "Log
     <header className="sticky top-0 z-20 border-b border-border bg-base/90 px-4 py-4 backdrop-blur sm:px-8" style={{ backgroundColor: "rgba(20,23,28,0.9)" }}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <button onClick={onMenu} className="rounded-md p-1.5 text-ink-muted hover:bg-surface-2 hover:text-ink lg:hidden">
-            <Menu className="h-5 w-5" />
-          </button>
           <div>
             <h1 className="font-display text-lg font-semibold sm:text-xl">{title}</h1>
             {subtitle && <p className="text-xs text-ink-muted sm:text-sm">{subtitle}</p>}

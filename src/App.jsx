@@ -4,6 +4,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { DataProvider } from "./context/DataContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Sidebar from "./components/Sidebar";
+import BottomNav from "./components/BottomNav";
 import Dashboard from "./pages/Dashboard";
 import Entries from "./pages/Entries";
 import Statistics from "./pages/Statistics";
@@ -13,18 +14,19 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 
 function AppShell() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   return (
     <DataProvider>
       <div className="flex min-h-screen bg-base text-ink">
-        <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <Routes>
-          <Route path="/" element={<Dashboard onMenu={() => setSidebarOpen(true)} />} />
-          <Route path="/entries" element={<Entries onMenu={() => setSidebarOpen(true)} />} />
-          <Route path="/statistics" element={<Statistics onMenu={() => setSidebarOpen(true)} />} />
-          <Route path="/vehicles" element={<Vehicles onMenu={() => setSidebarOpen(true)} />} />
-        </Routes>
+        <Sidebar />
+        <div className="flex-1 pb-16 lg:pb-0">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/entries" element={<Entries />} />
+            <Route path="/statistics" element={<Statistics />} />
+            <Route path="/vehicles" element={<Vehicles />} />
+          </Routes>
+        </div>
+        <BottomNav />
       </div>
     </DataProvider>
   );
