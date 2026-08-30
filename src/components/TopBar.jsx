@@ -1,9 +1,17 @@
-import { Menu, Plus } from "lucide-react";
+import { Plus, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useData } from "../context/DataContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function TopBar({ title, subtitle, onMenu, onAdd, addLabel = "Log expense" }) {
   const { vehicles, activeVehicleId, setActiveVehicleId } = useData();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
 
+  async function handleLogout() {
+    await logout();
+    navigate("/login", { replace: true });
+  }
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-base/90 px-4 py-4 backdrop-blur sm:px-8" style={{ backgroundColor: "rgba(20,23,28,0.9)" }}>
       <div className="flex items-center justify-between gap-3">
@@ -25,7 +33,7 @@ export default function TopBar({ title, subtitle, onMenu, onAdd, addLabel = "Log
               <option key={v.id} value={v.id}>{v.name}</option>
             ))}
           </select>
-          {onAdd && (
+                    {onAdd && (
             <button
               onClick={onAdd}
               className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-base transition-transform active:scale-95"
@@ -35,6 +43,13 @@ export default function TopBar({ title, subtitle, onMenu, onAdd, addLabel = "Log
               <span className="hidden sm:inline">{addLabel}</span>
             </button>
           )}
+          <button
+            onClick={handleLogout}
+            aria-label="Log out"
+            className="rounded-lg border border-border p-2 text-ink-muted transition-colors hover:bg-surface-2 hover:text-ink lg:hidden"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

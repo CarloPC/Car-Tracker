@@ -35,7 +35,7 @@ export default function Entries({ onMenu }) {
               className="input pl-9"
             />
           </div>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input w-auto">
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="input w-full sm:w-auto">
             <option value="all">All categories</option>
             {EXPENSE_CATEGORIES.map((c) => (
               <option key={c.id} value={c.id}>{c.label}</option>
