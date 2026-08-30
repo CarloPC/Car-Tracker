@@ -28,6 +28,7 @@
 
 html {
   color-scheme: dark;
+  touch-action: manipulation;
 }
 
 body {
