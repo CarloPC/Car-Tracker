@@ -27,7 +27,7 @@ export default function Dashboard({ onMenu }) {
   const recent = activityFeed(scopedVehicles, scopedEntries, 6);
 
   return (
-    <div className="flex-1">
+    <div className="w-full min-w-0 flex-1 overflow-x-hidden">
       <TopBar
         title="Dashboard"
         subtitle={activeVehicleId === "all" ? "All vehicles, all time" : vehicles.find((v) => v.id === activeVehicleId)?.name}

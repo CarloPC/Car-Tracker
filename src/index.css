@@ -29,9 +29,11 @@
 html {
   color-scheme: dark;
   touch-action: manipulation;
+  overflow-x: hidden;
 }
 
 body {
+  overflow-x: hidden;
   background-color: var(--color-base);
   color: var(--color-ink);
   font-family: var(--font-body);

@@ -16,9 +16,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 function AppShell() {
   return (
     <DataProvider>
-      <div className="flex min-h-screen bg-base text-ink">
+      <div className="flex min-h-screen w-full overflow-x-hidden bg-base text-ink">
         <Sidebar />
-        <div className="flex-1 pb-16 lg:pb-0">
+        <div className="min-w-0 flex-1 pb-16 lg:pb-0">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/entries" element={<Entries />} />

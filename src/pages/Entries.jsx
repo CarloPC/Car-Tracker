@@ -21,7 +21,7 @@ export default function Entries({ onMenu }) {
   }, [entries, activeVehicleId, categoryFilter, query]);
 
   return (
-    <div className="flex-1">
+    <div className="w-full min-w-0 flex-1 overflow-x-hidden">
       <TopBar title="Expenses" subtitle={`${filtered.length} logged`} onMenu={onMenu} onAdd={() => setShowAdd(true)} addLabel="Log expense" />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
@@ -51,7 +51,7 @@ export default function Entries({ onMenu }) {
               {filtered.map((e) => {
                 const vehicle = vehicles.find((v) => v.id === e.vehicleId);
                 return (
-                  <li key={e.id} className="flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-surface-2">
+                  <li key={e.id} className="flex min-w-0 items-center justify-between gap-3 px-5 py-3.5 hover:bg-surface-2">
                     <div className="flex min-w-0 items-center gap-3">
                       <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: categoryColor(e.category) }} />
                       <div className="min-w-0">
