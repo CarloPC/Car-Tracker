@@ -48,4 +48,4 @@ export const CONTACT_PHONE_DISPLAY = "0995 122 1567";
 export const CONTACT_PHONE_TEL = "+639951221567"; // dialed when tapped (international format)
 export const CONTACT_FB_NAME = "Mar Catubay";
 // Replace with your exact Facebook profile/page link (e.g. https://www.facebook.com/your.username)
-export const CONTACT_FB_URL = "https://www.facebook.com/search/top?q=Mar%20Catubay";
+export const CONTACT_FB_URL = "https://www.facebook.com/zachary.abellana.catubay";
