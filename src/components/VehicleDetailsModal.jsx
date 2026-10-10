@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import {
   X, ChevronLeft, ChevronRight, ImageOff, Share2, Pencil, Images,
-  Car, Calendar, Cog, Gauge, Fuel, Palette, Tag,
+  Car, Calendar, Cog, Gauge, Fuel, Palette, Tag, Maximize2,
 } from "lucide-react";
 import PriceCalculator from "./PriceCalculator";
+import ImageLightbox from "./ImageLightbox";
 import { ProfitPreview } from "./SellingPrice";
 import { formatMoney } from "../lib/constants";
 
@@ -17,6 +18,10 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
   const [index, setIndex] = useState(0);
   const thumbsRef = useRef(null);
   const touchX = useRef(null);
+  const swiped = useRef(false);
+  const [lightbox, setLightbox] = useState(false);
+  const lightboxRef = useRef(false);
+  lightboxRef.current = lightbox;
   const count = photos.length;
   const sold = vehicle.status === "sold";
   const subtitle = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(" ");
@@ -33,7 +38,11 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
     const onKey = (e) => {
       if (e.key === "ArrowRight") go(1);
       else if (e.key === "ArrowLeft") go(-1);
-      else if (e.key === "Escape" && onClose) onClose();
+      else if (e.key === "Escape") {
+        // Esc closes the fullscreen viewer first, then the modal
+        if (lightboxRef.current) setLightbox(false);
+        else if (onClose) onClose();
+      }
     };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
@@ -102,7 +111,11 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
               if (touchX.current === null) return;
               const dx = e.changedTouches[0].clientX - touchX.current;
               touchX.current = null;
-              if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+              if (Math.abs(dx) > 50) {
+                go(dx < 0 ? 1 : -1);
+                swiped.current = true; // don't treat the swipe as a tap-to-fullscreen
+                setTimeout(() => (swiped.current = false), 350);
+              }
             }}
           >
             {count > 0 ? (
@@ -110,8 +123,9 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
                 key={photos[index].url}
                 src={photos[index].url}
                 alt={`${vehicle.name} photo ${index + 1}`}
-                className="hero-swap h-full w-full object-cover"
+                className="hero-swap h-full w-full cursor-zoom-in object-cover"
                 draggable={false}
+                onClick={() => !swiped.current && setLightbox(true)}
               />
             ) : (
               <div
@@ -139,8 +153,20 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
               </>
             )}
 
+            {count > 0 && (
+              <button
+                onClick={() => setLightbox(true)}
+                aria-label="View photo fullscreen"
+                title="View fullscreen"
+                className="absolute bottom-3 right-3 z-10 flex h-10 items-center gap-1.5 rounded-full bg-black/60 px-3 text-xs font-semibold text-white backdrop-blur-sm transition-colors hover:bg-black/80 sm:bottom-4 sm:right-4"
+              >
+                <Maximize2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Fullscreen</span>
+              </button>
+            )}
+
             {/* Title block */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 sm:p-6">
               <span
                 className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider"
                 style={
@@ -242,6 +268,16 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
           </div>
         </div>
       </div>
+
+      {lightbox && count > 0 && (
+        <ImageLightbox
+          photos={photos}
+          index={index}
+          title={vehicle.name}
+          onChange={go}
+          onClose={() => setLightbox(false)}
+        />
+      )}
     </div>
   );
 }
