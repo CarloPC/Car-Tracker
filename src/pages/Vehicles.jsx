@@ -53,7 +53,7 @@ export default function Vehicles({ onMenu }) {
                 <div key={v.id} className="rounded-2xl border border-border bg-surface p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5">
-                      <VehicleAvatar vehicle={v} refreshKey={photoVersion} size={52} onClick={() => setViewingPhotos(v)} />
+                      <VehicleAvatar vehicle={v} refreshKey={photoVersion} size={72} onClick={() => setViewingPhotos(v)} />
                       <div>
                         <div className="font-display text-sm font-semibold">{v.name}</div>
                         <div className="text-xs text-ink-muted">{[v.year, v.make, v.model].filter(Boolean).join(" ") || "No details yet"}</div>

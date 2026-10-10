@@ -98,3 +98,9 @@ export async function getCoverPhotoUrl(userId, vehicleId) {
   if (!first) return null;
   return supabase.storage.from(BUCKET).getPublicUrl(`${userId}/${vehicleId}/${first.name}`).data.publicUrl;
 }
+
+
+/** Public URL for a stored photo path. */
+export function getPhotoUrl(path) {
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}

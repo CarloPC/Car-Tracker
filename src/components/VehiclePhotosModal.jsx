@@ -1,10 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { X, ChevronLeft, ChevronRight, Upload, Trash2, ImageOff, Loader2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Upload, Trash2, ImageOff, Loader2, Star } from "lucide-react";
 import { uploadCarPhoto, listCarPhotos, deleteCarPhoto } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { useData } from "../context/DataContext";
 
-export default function VehiclePhotosModal({ vehicle, onClose }) {
+export default function VehiclePhotosModal({ vehicle: vehicleProp, onClose }) {
   const { user } = useAuth();
+  const { vehicles, updateVehicle } = useData();
+  // Use the live vehicle so the "profile" state updates right after saving
+  const vehicle = vehicles.find((v) => v.id === vehicleProp.id) || vehicleProp;
+  const [settingCover, setSettingCover] = useState(false);
   const fileInputRef = useRef(null);
 
   const [photos, setPhotos] = useState([]);
@@ -111,6 +116,7 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
     if (!confirm("Delete this photo?")) return;
     try {
       await deleteCarPhoto(photo.path);
+      if (vehicle.coverPath === photo.path) await updateVehicle(vehicle.id, { coverPath: null });
       setPhotos((prev) => prev.filter((_, i) => i !== activeIndex));
     } catch (e) {
       setError("Delete failed: " + e.message);
@@ -118,6 +124,22 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
   }
 
   const currentPhoto = photos[activeIndex];
+  // Profile = chosen photo, otherwise the first one uploaded
+  const profilePath = photos.some((p) => p.path === vehicle.coverPath) ? vehicle.coverPath : photos[0]?.path;
+  const isProfile = currentPhoto && currentPhoto.path === profilePath;
+
+  async function handleSetProfile() {
+    if (!currentPhoto || isProfile) return;
+    setError("");
+    setSettingCover(true);
+    try {
+      await updateVehicle(vehicle.id, { coverPath: currentPhoto.path });
+    } catch (e) {
+      setError("Couldn't set profile picture: " + e.message);
+    } finally {
+      setSettingCover(false);
+    }
+  }
 
   return (
     <>
@@ -236,6 +258,21 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+
+                  {/* Set as profile button (below delete) */}
+                  <button
+                    onClick={handleSetProfile}
+                    disabled={isProfile || settingCover}
+                    className="absolute right-2 top-12 flex h-8 items-center gap-1.5 rounded-full bg-black/50 px-2.5 text-xs font-semibold text-white backdrop-blur-sm transition-colors enabled:hover:bg-black/70 disabled:cursor-default"
+                    style={isProfile ? { color: "var(--color-amber)" } : undefined}
+                  >
+                    {settingCover ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Star className="h-3.5 w-3.5" fill={isProfile ? "currentColor" : "none"} />
+                    )}
+                    {isProfile ? "Profile" : "Set as profile"}
+                  </button>
                 </div>
 
                 {/* Thumbnail strip */}
@@ -245,7 +282,7 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
                       <button
                         key={p.path}
                         onClick={() => setActiveIndex(i)}
-                        className="shrink-0 overflow-hidden rounded-lg transition-all"
+                        className="relative shrink-0 overflow-hidden rounded-lg transition-all"
                         style={{
                           width: 64,
                           height: 48,
@@ -255,6 +292,9 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
                         }}
                       >
                         <img src={p.url} alt={`Thumb ${i + 1}`} className="h-full w-full object-cover" />
+                        {p.path === profilePath && (
+                          <Star className="absolute left-1 top-1 h-3 w-3" fill="var(--color-amber)" style={{ color: "var(--color-amber)" }} />
+                        )}
                       </button>
                     ))}
                   </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Gauge } from "lucide-react";
-import { getCoverPhotoUrl } from "../lib/supabase";
+import { getCoverPhotoUrl, getPhotoUrl } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 // Remember covers between renders/navigation so avatars don't flash on every visit
@@ -15,6 +15,14 @@ export default function VehicleAvatar({ vehicle, refreshKey = 0, size = 48, onCl
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
+    // A photo the user explicitly chose as profile wins over "first uploaded"
+    if (vehicle.coverPath) {
+      const u = getPhotoUrl(vehicle.coverPath);
+      coverCache.set(vehicle.id, u);
+      setUrl(u);
+      setFailed(false);
+      return;
+    }
     let cancelled = false;
     getCoverPhotoUrl(user.uid, vehicle.id)
       .then((u) => {
@@ -23,7 +31,7 @@ export default function VehicleAvatar({ vehicle, refreshKey = 0, size = 48, onCl
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [user.uid, vehicle.id, refreshKey]);
+  }, [user.uid, vehicle.id, vehicle.coverPath, refreshKey]);
 
   const Tag = onClick ? "button" : "div";
   return (
