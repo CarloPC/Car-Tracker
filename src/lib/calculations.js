@@ -24,7 +24,10 @@ export function vehicleStats(vehicle, entries) {
   const salePrice = sold ? num(vehicle.salePrice) : null;
   const invested = purchasePrice + expenses;
   const profit = sold ? salePrice - invested : null;
-  return { purchasePrice, expenses, invested, sold, salePrice, profit };
+  // Projected ("if I sell at...") numbers for unsold cars with a selling price set
+  const sellingPrice = !sold && num(vehicle.sellingPrice) > 0 ? num(vehicle.sellingPrice) : null;
+  const projectedProfit = sellingPrice !== null ? sellingPrice - invested : null;
+  return { purchasePrice, expenses, invested, sold, salePrice, profit, sellingPrice, projectedProfit };
 }
 
 // Portfolio-wide roll-up across a set of vehicles (already scoped by the caller).
@@ -36,6 +39,9 @@ export function portfolioTotals(vehicles, entries) {
   let soldCount = 0;
   let stockCount = 0;
   let invested = 0; // cost basis still tied up in unsold cars
+  let projectedRevenue = 0; // selling prices set on unsold cars
+  let projectedProfit = 0;
+  let projectedCount = 0;
 
   for (const v of vehicles) {
     const s = vehicleStats(v, entries);
@@ -48,10 +54,15 @@ export function portfolioTotals(vehicles, entries) {
     } else {
       invested += s.invested;
       stockCount += 1;
+      if (s.sellingPrice !== null) {
+        projectedRevenue += s.sellingPrice;
+        projectedProfit += s.projectedProfit;
+        projectedCount += 1;
+      }
     }
   }
 
-  return { bought, expenses, sold, profit, soldCount, stockCount, invested };
+  return { bought, expenses, sold, profit, soldCount, stockCount, invested, projectedRevenue, projectedProfit, projectedCount };
 }
 
 export function byCategory(entries) {

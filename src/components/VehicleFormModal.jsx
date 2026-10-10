@@ -2,6 +2,7 @@ import { useState } from "react";
 import Modal from "./Modal";
 import NumberField from "./NumberField";
 import { useData } from "../context/DataContext";
+import { ProfitPreview } from "./SellingPrice";
 
 const SWATCHES = ["#f2a93b", "#4fd1a5", "#5b9df2", "#f2545b", "#9b8cf2", "#e879b9"];
 const today = () => new Date().toISOString().slice(0, 10);
@@ -20,11 +21,14 @@ export default function VehicleFormModal({ onClose, vehicle }) {
 
   const [purchasePrice, setPurchasePrice] = useState(vehicle?.purchasePrice ?? "");
   const [purchaseDate, setPurchaseDate] = useState(vehicle?.purchaseDate ?? today());
+  const [sellingPrice, setSellingPrice] = useState(vehicle?.sellingPrice ?? "");
   const [salePrice, setSalePrice] = useState(vehicle?.salePrice ?? "");
   const [saleDate, setSaleDate] = useState(vehicle?.saleDate ?? "");
 
   const [error, setError] = useState("");
 
+  const invested =
+    Number(purchasePrice || 0) + (vehicle ? entries.filter((e) => e.vehicleId === vehicle.id).reduce((t, e) => t + (Number(e.amount) || 0), 0) : 0);
   const usageCount = vehicle ? entries.filter((e) => e.vehicleId === vehicle.id).length : 0;
 
   function handleSubmit(e) {
@@ -43,6 +47,7 @@ export default function VehicleFormModal({ onClose, vehicle }) {
       color,
       purchasePrice: Number(purchasePrice),
       purchaseDate: purchaseDate || today(),
+      sellingPrice: sellingPrice === "" ? null : Number(sellingPrice),
       salePrice: salePrice === "" ? null : Number(salePrice),
       saleDate: salePrice === "" ? null : (saleDate || today()),
     };
@@ -91,6 +96,14 @@ export default function VehicleFormModal({ onClose, vehicle }) {
               <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className="input" />
             </Field>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-surface-2 p-3.5">
+          <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-muted">
+            Selling price <span className="normal-case text-ink-faint">(asking / target — not sold yet)</span>
+          </div>
+          <NumberField value={sellingPrice} onChange={setSellingPrice} placeholder="400,000" />
+          <ProfitPreview sellingPrice={sellingPrice} invested={invested} />
         </div>
 
         <div className="rounded-xl border border-border bg-surface-2 p-3.5">

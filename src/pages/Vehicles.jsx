@@ -3,15 +3,20 @@ import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
 import VehicleFormModal from "../components/VehicleFormModal";
 import VehiclePhotosModal from "../components/VehiclePhotosModal";
-import { vehicleStats } from "../lib/calculations";
+import { vehicleStats, portfolioTotals } from "../lib/calculations";
+import { SellingPriceEditor } from "../components/SellingPrice";
+import VehicleAvatar from "../components/VehicleAvatar";
 import { formatMoney, formatDate } from "../lib/constants";
-import { Pencil, Gauge, Images } from "lucide-react";
+import { Pencil, Images } from "lucide-react";
 
 export default function Vehicles({ onMenu }) {
   const { vehicles, entries } = useData();
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
   const [viewingPhotos, setViewingPhotos] = useState(null); // vehicle object
+  const [photoVersion, setPhotoVersion] = useState(0); // bump to refresh profile pictures
+
+  const totals = portfolioTotals(vehicles, entries);
 
   return (
     <div className="flex-1">
@@ -23,6 +28,24 @@ export default function Vehicles({ onMenu }) {
             No vehicles yet. Add one to start tracking what you bought it for.
           </div>
         ) : (
+          <>
+          {totals.projectedCount > 0 && (
+            <div className="mb-4 grid grid-cols-2 gap-3 rounded-2xl border border-border bg-surface p-4 text-sm sm:max-w-md">
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-ink-muted">Expected revenue</div>
+                <div className="font-mono">{formatMoney(totals.projectedRevenue)}</div>
+              </div>
+              <div>
+                <div className="text-[11px] uppercase tracking-wider text-ink-muted">Expected net profit</div>
+                <div className="font-mono font-semibold" style={{ color: totals.projectedProfit >= 0 ? "var(--color-teal)" : "var(--color-coral)" }}>
+                  {totals.projectedProfit >= 0 ? "+" : "−"}{formatMoney(Math.abs(totals.projectedProfit))}
+                </div>
+              </div>
+              <div className="col-span-2 text-[11px] text-ink-faint">
+                Across {totals.projectedCount} unsold car{totals.projectedCount !== 1 ? "s" : ""} with a selling price
+              </div>
+            </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {vehicles.map((v) => {
               const s = vehicleStats(v, entries);
@@ -30,9 +53,7 @@ export default function Vehicles({ onMenu }) {
                 <div key={v.id} className="rounded-2xl border border-border bg-surface p-5">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2.5">
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg" style={{ backgroundColor: `${v.color}22` }}>
-                        <Gauge className="h-4.5 w-4.5" style={{ color: v.color }} />
-                      </span>
+                      <VehicleAvatar vehicle={v} refreshKey={photoVersion} size={52} onClick={() => setViewingPhotos(v)} />
                       <div>
                         <div className="font-display text-sm font-semibold">{v.name}</div>
                         <div className="text-xs text-ink-muted">{[v.year, v.make, v.model].filter(Boolean).join(" ") || "No details yet"}</div>
@@ -94,6 +115,8 @@ export default function Vehicles({ onMenu }) {
                     )}
                   </div>
 
+                  {!s.sold && <SellingPriceEditor vehicle={v} invested={s.invested} />}
+
                   {/* Photos quick-link row */}
                   <button
                     onClick={() => setViewingPhotos(v)}
@@ -106,12 +129,13 @@ export default function Vehicles({ onMenu }) {
               );
             })}
           </div>
+          </>
         )}
       </div>
 
       {showAdd && <VehicleFormModal onClose={() => setShowAdd(false)} />}
       {editing && <VehicleFormModal vehicle={editing} onClose={() => setEditing(null)} />}
-      {viewingPhotos && <VehiclePhotosModal vehicle={viewingPhotos} onClose={() => setViewingPhotos(null)} />}
+      {viewingPhotos && <VehiclePhotosModal vehicle={viewingPhotos} onClose={() => { setViewingPhotos(null); setPhotoVersion((n) => n + 1); }} />}
     </div>
   );
 }

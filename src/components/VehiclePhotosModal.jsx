@@ -13,6 +13,8 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [error, setError] = useState("");
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [dragging, setDragging] = useState(false);
 
   // Load photos on open
   useEffect(() => {
@@ -48,23 +50,59 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
     return () => window.removeEventListener("keydown", onKey);
   });
 
-  async function handleFiles(e) {
-    const files = Array.from(e.target.files || []);
+  async function uploadFiles(fileList) {
+    const files = Array.from(fileList || []).filter(
+      (f) => f.type.startsWith("image/") || /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(f.name)
+    );
     if (!files.length) return;
     setError("");
     setUploading(true);
-    try {
-      const uploaded = await Promise.all(
-        files.map((f) => uploadCarPhoto(user.uid, vehicle.id, f))
-      );
-      setPhotos((prev) => [...prev, ...uploaded]);
-      setActiveIndex((prev) => prev + uploaded.length - 1);
-    } catch (e) {
-      setError("Upload failed: " + e.message);
-    } finally {
-      setUploading(false);
-      e.target.value = "";
+    setProgress({ done: 0, total: files.length });
+
+    const results = new Array(files.length);
+    const failed = [];
+    let nextIdx = 0;
+    let done = 0;
+
+    // Upload 3 at a time; one failure doesn't cancel the rest
+    async function worker() {
+      while (nextIdx < files.length) {
+        const i = nextIdx++;
+        try {
+          results[i] = await uploadCarPhoto(user.uid, vehicle.id, files[i]);
+        } catch (err) {
+          failed.push(`${files[i].name}: ${err.message}`);
+        }
+        done++;
+        setProgress({ done, total: files.length });
+      }
     }
+    await Promise.all(Array.from({ length: Math.min(3, files.length) }, worker));
+
+    const uploaded = results.filter(Boolean);
+    if (uploaded.length) {
+      setPhotos((prev) => {
+        setActiveIndex(prev.length); // jump to first new photo
+        return [...prev, ...uploaded];
+      });
+    }
+    if (failed.length) {
+      setError(`${failed.length} of ${files.length} failed. ${failed[0]}`);
+    }
+    setUploading(false);
+  }
+
+  function handleFiles(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = ""; // allow re-selecting same files
+    uploadFiles(files);
+  }
+
+  function handleDrop(e) {
+    e.preventDefault();
+    setDragging(false);
+    if (uploading) return;
+    uploadFiles(e.dataTransfer?.files);
   }
 
   async function handleDelete() {
@@ -90,8 +128,16 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
         {/* Panel */}
         <div
           className="relative z-10 flex w-full max-w-2xl flex-col rounded-2xl border border-border bg-surface shadow-2xl"
-          style={{ maxHeight: "90vh" }}
+          style={{ maxHeight: "90vh", outline: dragging ? "2px dashed var(--color-amber)" : "none" }}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
+          onDrop={handleDrop}
         >
+          {dragging && (
+            <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-black/60 text-sm font-semibold text-white">
+              Drop photos to upload
+            </div>
+          )}
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
@@ -113,7 +159,7 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
                 ) : (
                   <Upload className="h-3.5 w-3.5" />
                 )}
-                {uploading ? "Uploading…" : "Upload"}
+                {uploading ? `Uploading ${progress.done}/${progress.total}` : "Upload"}
               </button>
               <input
                 ref={fileInputRef}
@@ -140,6 +186,7 @@ export default function VehiclePhotosModal({ vehicle, onClose }) {
               <div className="flex flex-col items-center gap-3 py-16 text-ink-muted">
                 <ImageOff className="h-10 w-10 opacity-30" />
                 <p className="text-sm">No photos yet</p>
+                <p className="text-xs opacity-70">Select many at once, or drag &amp; drop on desktop</p>
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="mt-1 rounded-lg px-4 py-2 text-sm font-semibold"
