@@ -1,8 +1,9 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -12,7 +13,14 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) {
+    // Shared links like /vehicles?vehicleId=abc (or ?sharedId=abc) go to the public
+    // view-only page instead of the login screen.
+    const params = new URLSearchParams(location.search);
+    const sharedId = params.get("vehicleId") || params.get("sharedId");
+    if (sharedId) return <Navigate to={`/v/${encodeURIComponent(sharedId)}`} replace />;
+    return <Navigate to="/login" replace />;
+  }
 
   return children;
 }

@@ -79,6 +79,8 @@ export function DataProvider({ children }) {
         const linked = entries.filter((e) => e.vehicleId === id);
         await Promise.all(linked.map((e) => deleteDoc(doc(db, "users", user.uid, "entries", e.id))));
         await deleteDoc(doc(db, "users", user.uid, "vehicles", id));
+        // also take down its public (shared) copy, if there is one
+        await deleteDoc(doc(db, "publicVehicles", id)).catch(() => {});
         setActiveVehicleId((curr) => (curr === id ? "all" : curr));
       },
 

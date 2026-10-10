@@ -12,6 +12,9 @@ import Vehicles from "./pages/Vehicles";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
+import PublicVehicle from "./pages/PublicVehicle";
+import PublicGarage from "./pages/PublicGarage";
+import { ToastProvider } from "./components/Toast";
 
 function AppShell() {
   return (
@@ -35,8 +38,12 @@ function AppShell() {
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public, no login needed */}
+          <Route path="/v/:id" element={<PublicVehicle />} />
+          <Route path="/stock/:ownerId" element={<PublicGarage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -50,6 +57,7 @@ export default function App() {
           />
         </Routes>
       </BrowserRouter>
+      </ToastProvider>
     </AuthProvider>
   );
 }

@@ -18,6 +18,10 @@ export default function VehicleFormModal({ onClose, vehicle }) {
   const [plate, setPlate] = useState(vehicle?.plate ?? "");
   const [odometer, setOdometer] = useState(vehicle?.odometer ?? "");
   const [color, setColor] = useState(vehicle?.color ?? SWATCHES[0]);
+  const [transmission, setTransmission] = useState(vehicle?.transmission ?? "");
+  const [fuelType, setFuelType] = useState(vehicle?.fuelType ?? "");
+  const [bodyColor, setBodyColor] = useState(vehicle?.bodyColor ?? "");
+  const [description, setDescription] = useState(vehicle?.description ?? "");
 
   const [purchasePrice, setPurchasePrice] = useState(vehicle?.purchasePrice ?? "");
   const [purchaseDate, setPurchaseDate] = useState(vehicle?.purchaseDate ?? today());
@@ -45,6 +49,10 @@ export default function VehicleFormModal({ onClose, vehicle }) {
       plate: plate.trim(),
       odometer: odometer === "" ? 0 : Number(odometer),
       color,
+      transmission,
+      fuelType,
+      bodyColor: bodyColor.trim(),
+      description: description.trim(),
       purchasePrice: Number(purchasePrice),
       purchaseDate: purchaseDate || today(),
       sellingPrice: sellingPrice === "" ? null : Number(sellingPrice),
@@ -84,6 +92,35 @@ export default function VehicleFormModal({ onClose, vehicle }) {
 
         <Field label="Odometer">
           <NumberField value={odometer} onChange={setOdometer} placeholder="38,250" allowDecimal={false} />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Transmission">
+            <select value={transmission} onChange={(e) => setTransmission(e.target.value)} className="input">
+              <option value="">—</option>
+              {["Automatic", "Manual", "CVT", "Semi-automatic"].map((o) => <option key={o}>{o}</option>)}
+            </select>
+          </Field>
+          <Field label="Fuel type">
+            <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} className="input">
+              <option value="">—</option>
+              {["Gasoline", "Diesel", "Hybrid", "Electric", "LPG"].map((o) => <option key={o}>{o}</option>)}
+            </select>
+          </Field>
+        </div>
+
+        <Field label="Color (shown to buyers)">
+          <input value={bodyColor} onChange={(e) => setBodyColor(e.target.value)} placeholder="Pearl White" className="input" />
+        </Field>
+
+        <Field label="Description / notes (shown to buyers)">
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Well maintained, complete papers, first owner…"
+            className="input resize-none"
+          />
         </Field>
 
         <div className="rounded-xl border border-border bg-surface-2 p-3.5">

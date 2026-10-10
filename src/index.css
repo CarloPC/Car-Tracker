@@ -91,3 +91,22 @@ body {
   background-position: -4px center;
   height: 10px;
 }
+
+/* -- Modal / gallery / toast animations -- */
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modal-pop {
+  from { opacity: 0; transform: translateY(28px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes hero-swap {
+  from { opacity: 0; transform: scale(1.03); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+.fade-in { animation: fade-in 0.2s ease-out both; }
+.modal-pop { animation: modal-pop 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.hero-swap { animation: hero-swap 0.45s ease-out both; }
+.toast-in { animation: toast-in 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
