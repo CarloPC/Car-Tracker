@@ -3,7 +3,7 @@ import {
   X, ChevronLeft, ChevronRight, ImageOff, Share2, Pencil, Images,
   Car, Calendar, Cog, Gauge, Fuel, Palette, Tag, Maximize2,
 } from "lucide-react";
-import PriceCalculator from "./PriceCalculator";
+import ContactCard from "./ContactCard";
 import ImageLightbox from "./ImageLightbox";
 import { ProfitPreview } from "./SellingPrice";
 import { formatMoney } from "../lib/constants";
@@ -257,13 +257,12 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
             </div>
 
             <div className="lg:col-span-2">
-              {sold ? (
-                <div className="rounded-2xl border border-border bg-surface-2/40 p-5 text-center text-sm text-ink-muted">
+              {sold && (
+                <div className="mb-3 rounded-2xl border border-border bg-surface-2/40 p-4 text-center text-sm text-ink-muted">
                   This unit has already been sold.
                 </div>
-              ) : (
-                <PriceCalculator listedPrice={vehicle.sellingPrice} />
               )}
+              <ContactCard />
             </div>
           </div>
         </div>
