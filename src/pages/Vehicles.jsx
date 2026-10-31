@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
@@ -56,7 +56,7 @@ function OwnerDetails({ vehicle, stats, uid, photoVersion, onClose, onShare, onE
 }
 
 export default function Vehicles({ onMenu }) {
-  const { vehicles, entries, loading, updateVehicle } = useData();
+  const { vehicles, entries, loading, updateVehicle, activeVehicleId } = useData();
   const { user } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -68,7 +68,13 @@ export default function Vehicles({ onMenu }) {
   const [photoTouch, setPhotoTouch] = useState({ vehicleId: null, version: 0 }); // which car's photos changed
   const [bulkBusy, setBulkBusy] = useState(false);
 
-  const totals = portfolioTotals(vehicles, entries);
+  // Respect the vehicle dropdown in the TopBar ("all" shows everything)
+  const visibleVehicles = useMemo(
+    () => (activeVehicleId === "all" ? vehicles : vehicles.filter((v) => v.id === activeVehicleId)),
+    [vehicles, activeVehicleId]
+  );
+
+  const totals = portfolioTotals(visibleVehicles, entries);
 
   // Keep public snapshots of shared vehicles up to date
   const bulk = useBulkShare(user?.uid);
@@ -157,7 +163,7 @@ export default function Vehicles({ onMenu }) {
 
   return (
     <div className="flex-1">
-      <TopBar title="Vehicles" subtitle={`${vehicles.length} in your garage`} onMenu={onMenu} onAdd={() => setShowAdd(true)} addLabel="Add vehicle" />
+      <TopBar title="Vehicles" subtitle={activeVehicleId === "all" ? `${vehicles.length} in your garage` : `Showing ${visibleVehicles.length} of ${vehicles.length}`} onMenu={onMenu} onAdd={() => setShowAdd(true)} addLabel="Add vehicle" />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
         {vehicles.length === 0 ? (
@@ -223,7 +229,7 @@ export default function Vehicles({ onMenu }) {
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {vehicles.map((v) => {
+            {visibleVehicles.map((v) => {
               const s = vehicleStats(v, entries);
               return (
                 <div key={v.id} className="rounded-2xl border border-border bg-surface p-5">
