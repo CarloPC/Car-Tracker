@@ -8,13 +8,14 @@ import BottomNav from "./components/BottomNav";
 import Dashboard from "./pages/Dashboard";
 import Entries from "./pages/Entries";
 import Statistics from "./pages/Statistics";
-   import Vehicles from "./pages/Vehicles";
-   import LinkVisits from "./pages/LinkVisits";
+import Vehicles from "./pages/Vehicles";
+import LinkVisits from "./pages/LinkVisits";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import PublicVehicle from "./pages/PublicVehicle";
 import PublicGarage from "./pages/PublicGarage";
+import LocationPrompt from "./components/LocationPrompt";
 import { ToastProvider } from "./components/Toast";
 
 function AppShell() {
@@ -27,8 +28,8 @@ function AppShell() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/entries" element={<Entries />} />
             <Route path="/statistics" element={<Statistics />} />
-               <Route path="/vehicles" element={<Vehicles />} />
-               <Route path="/visits" element={<LinkVisits />} />
+            <Route path="/vehicles" element={<Vehicles />} />
+            <Route path="/visits" element={<LinkVisits />} />
           </Routes>
         </div>
         <BottomNav />
@@ -44,8 +45,8 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           {/* Public, no login needed */}
-          <Route path="/v/:id" element={<PublicVehicle />} />
-          <Route path="/stock/:ownerId" element={<PublicGarage />} />
+          <Route path="/v/:id" element={<><PublicVehicle /><LocationPrompt /></>} />
+          <Route path="/stock/:ownerId" element={<><PublicGarage /><LocationPrompt /></>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

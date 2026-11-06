@@ -4,46 +4,51 @@ import "leaflet/dist/leaflet.css";
 import { ExternalLink, X } from "lucide-react";
 
 const AMBER = "#f2a93b";
-// IP geolocation is only accurate to roughly the city / ISP hub, so we draw that uncertainty on the map
-const APPROX_RADIUS_M = 5000;
+const TEAL = "#4fd1a5";
+// IP geolocation is only good to roughly the city / carrier hub, so we draw that uncertainty on the map
+const IP_RADIUS_M = 5000;
 
 export default function LocationMapModal({ visit, onClose }) {
   const mapEl = useRef(null);
   const { lat, lng } = visit;
-  const place = [visit.city, visit.region, visit.country].filter(Boolean).join(", ") || "Approximate location";
+  const exact = visit.locationSource === "gps";
+  const color = exact ? TEAL : AMBER;
+  const radius = exact ? Math.max(Number(visit.accuracy) || 50, 20) : IP_RADIUS_M;
+  const place = [visit.city, visit.region, visit.country].filter(Boolean).join(", ") || "Location";
 
   useEffect(() => {
-    const map = L.map(mapEl.current).setView([lat, lng], 11);
+    const map = L.map(mapEl.current).setView([lat, lng], exact ? 16 : 11);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
-    L.circle([lat, lng], { radius: APPROX_RADIUS_M, color: AMBER, weight: 1, fillColor: AMBER, fillOpacity: 0.15 }).addTo(map);
+    const area = L.circle([lat, lng], { radius, color, weight: 1, fillColor: color, fillOpacity: 0.15 }).addTo(map);
 
-    // Plain DOM node (not an HTML string) so city/ISP text from the IP service can never inject markup
+    // Plain DOM node (not an HTML string) so text from the lookup services can never inject markup
     const popup = document.createElement("div");
     const title = document.createElement("strong");
     title.textContent = place;
     popup.appendChild(title);
-    if (visit.ip) {
-      popup.appendChild(document.createElement("br"));
-      popup.appendChild(document.createTextNode(visit.ip));
-    }
+    popup.appendChild(document.createElement("br"));
+    popup.appendChild(document.createTextNode(exact ? `GPS, within about ${radius} m` : "IP estimate (approximate)"));
 
-    L.circleMarker([lat, lng], { radius: 9, color: "#14171c", weight: 2, fillColor: AMBER, fillOpacity: 1 })
+    L.circleMarker([lat, lng], { radius: 9, color: "#14171c", weight: 2, fillColor: color, fillOpacity: 1 })
       .addTo(map)
       .bindPopup(popup)
       .openPopup();
 
-    // The modal has just mounted, so make Leaflet re-measure its container
-    const t = setTimeout(() => map.invalidateSize(), 60);
+    // The modal has just mounted, so make Leaflet re-measure, then fit the accuracy circle in view
+    const t = setTimeout(() => {
+      map.invalidateSize();
+      map.fitBounds(area.getBounds(), { padding: [24, 24], maxZoom: 17 });
+    }, 60);
     return () => {
       clearTimeout(t);
       map.remove();
     };
-  }, [lat, lng, place, visit.ip]);
+  }, [lat, lng, place, exact, radius, color]);
 
   useEffect(() => {
     const onKey = (e) => e.key === "Escape" && onClose();
@@ -59,10 +64,12 @@ export default function LocationMapModal({ visit, onClose }) {
           <div className="min-w-0">
             <h2 className="truncate font-display text-lg font-semibold">{place}</h2>
             <p className="text-xs text-ink-muted">
-              {visit.isp ? `${visit.isp} · ` : ""}
+              <span style={{ color }}>{exact ? `Exact location · ±${radius} m` : "IP estimate"}</span>
+              {" · "}
               <span className="font-mono">
                 {lat.toFixed(4)}, {lng.toFixed(4)}
               </span>
+              {!exact && visit.isp ? ` · ${visit.isp}` : ""}
             </p>
           </div>
           <button onClick={onClose} aria-label="Close map" className="rounded-md p-1 text-ink-muted hover:bg-surface-2 hover:text-ink">
@@ -73,7 +80,11 @@ export default function LocationMapModal({ visit, onClose }) {
         <div ref={mapEl} className="h-[55vh] min-h-[280px] w-full sm:h-[420px]" style={{ isolation: "isolate" }} />
 
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-xs text-ink-muted sm:px-5">
-          <span>The shaded circle shows the approximate area; IP locations aren't exact.</span>
+          <span>
+            {exact
+              ? "Shared from the visitor's device. The circle is the device's accuracy range."
+              : "This visitor didn't share their location, so this is where their carrier/ISP routes traffic. It is often the wrong city."}
+          </span>
           <a
             href={`https://www.google.com/maps?q=${lat},${lng}`}
             target="_blank"

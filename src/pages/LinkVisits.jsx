@@ -177,6 +177,9 @@ export default function LinkVisits({ onMenu }) {
                   const loc = locationText(v);
                   const repeat = (visitCounts.get(v.visitorId) || 0) > 1;
                   const href = v.page === "garage" ? `/stock/${v.targetId}` : `/v/${v.targetId}`;
+                  const hasCoords = Number.isFinite(v.lat) && Number.isFinite(v.lng);
+                  const exact = v.locationSource === "gps";
+                  const text = loc || (hasCoords ? `${v.lat.toFixed(3)}, ${v.lng.toFixed(3)}` : "");
                   return (
                     <tr key={v.id} className="align-top">
                       <td className="whitespace-nowrap px-4 py-3">
@@ -207,24 +210,29 @@ export default function LinkVisits({ onMenu }) {
                       </td>
 
                       <td className="px-4 py-3">
-                        {loc ? (
+                        {text ? (
                           <div className="flex items-center gap-1.5">
                             <span>{flag(v.countryCode)}</span>
-                            {Number.isFinite(v.lat) && Number.isFinite(v.lng) ? (
+                            {hasCoords ? (
                               <button
                                 onClick={() => setMapVisit(v)}
                                 className="inline-flex items-center gap-1 text-left font-medium underline-offset-2 hover:underline"
                                 style={{ color: "var(--color-amber)" }}
                               >
-                                {loc} <MapPin className="h-3 w-3 shrink-0" />
+                                {text} <MapPin className="h-3 w-3 shrink-0" />
                               </button>
                             ) : (
-                              <span>{loc}</span>
+                              <span>{text}</span>
                             )}
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-ink-faint">
                             <Globe2 className="h-3.5 w-3.5" /> Unknown
+                          </div>
+                        )}
+                        {hasCoords && (
+                          <div className="mt-1">
+                            <Badge tone={exact ? "teal" : "muted"}>{exact ? `GPS · ±${v.accuracy ?? "?"} m` : "IP estimate"}</Badge>
                           </div>
                         )}
                         <div className="font-mono text-[11px] text-ink-faint">{v.ip || "—"}</div>
@@ -253,8 +261,9 @@ export default function LinkVisits({ onMenu }) {
         {mapVisit && <LocationMapModal visit={mapVisit} onClose={() => setMapVisit(null)} />}
 
         <p className="mt-4 text-xs text-ink-faint">
-          Showing the latest 500 visits. Location comes from the visitor's IP address, so it's approximate (it often shows the
-          mobile carrier's hub city). Visitors with an ad blocker or private DNS may show as Unknown.
+          Showing the latest 500 visits. "GPS" locations come from the visitor's own device after they tapped Allow. Otherwise the
+          location is an IP estimate, which usually points at the mobile carrier's hub rather than the visitor. Ad blockers or
+          private DNS can make it Unknown.
         </p>
       </div>
     </div>
@@ -265,7 +274,9 @@ function Badge({ tone, children }) {
   const style =
     tone === "amber"
       ? { backgroundColor: "var(--color-amber-dim)", color: "var(--color-amber)" }
-      : { backgroundColor: "var(--color-teal-dim)", color: "var(--color-teal)" };
+      : tone === "muted"
+        ? { backgroundColor: "var(--color-surface-2)", color: "var(--color-ink-muted)" }
+        : { backgroundColor: "var(--color-teal-dim)", color: "var(--color-teal)" };
   return (
     <span className="rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider" style={style}>
       {children}

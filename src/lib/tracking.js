@@ -15,6 +15,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  updateDoc,
   writeBatch,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -164,12 +165,13 @@ export async function logVisit({ ownerId, page, targetId, label = "", viewerUid 
   try {
     const ua = navigator.userAgent || "";
     const geo = await lookupLocation();
+    const hasCoords = Number.isFinite(geo.lat) && Number.isFinite(geo.lng);
     let referrer = "";
     try {
       referrer = document.referrer ? new URL(document.referrer).hostname : "";
     } catch { /* ignore */ }
 
-    await addDoc(collection(db, "linkVisits", ownerId, "visits"), {
+    const ref = await addDoc(collection(db, "linkVisits", ownerId, "visits"), {
       ownerId,
       page,
       targetId: clip(targetId, 128),
@@ -189,11 +191,109 @@ export async function logVisit({ ownerId, page, targetId, label = "", viewerUid 
       city: clip(geo.city, 80),
       isp: clip(geo.isp, 120),
       timezone: clip(geo.timezone, 60),
-      ...(Number.isFinite(geo.lat) && Number.isFinite(geo.lng) ? { lat: geo.lat, lng: geo.lng } : {}),
+      ...(hasCoords ? { lat: geo.lat, lng: geo.lng } : {}),
+      locationSource: hasCoords ? "ip" : "none",
     });
+
+    offerPreciseLocation(ref); // may show the opt-in banner, or silently upgrade if already allowed
   } catch (e) {
     console.warn("Visit tracking failed", e);
   }
+}
+
+// ---- Precise location (visitor opts in through the browser's own location prompt) ----
+// IP lookups only reveal where the visitor's carrier/ISP routes traffic, which can be a different
+// city entirely. The browser Geolocation API (GPS / Wi-Fi) is the only accurate source, and it
+// always needs the visitor's permission.
+
+let pendingRef = null;
+const listeners = new Set();
+const emit = () => listeners.forEach((fn) => fn(pendingRef));
+
+// LocationPrompt subscribes to know when there's a fresh visit it can ask about
+export function subscribePendingVisit(fn) {
+  listeners.add(fn);
+  fn(pendingRef);
+  return () => listeners.delete(fn);
+}
+
+export function dismissPreciseLocation() {
+  try {
+    sessionStorage.setItem("sk_loc_dismissed", "1");
+  } catch { /* ignore */ }
+  pendingRef = null;
+  emit();
+}
+
+async function offerPreciseLocation(ref) {
+  if (!navigator.geolocation) return;
+  let state = "prompt";
+  try {
+    state = (await navigator.permissions?.query({ name: "geolocation" }))?.state || "prompt";
+  } catch { /* some browsers (older Safari) don't support this: treat as "prompt" */ }
+
+  if (state === "denied") return;
+  if (state === "granted") {
+    // They already allowed it for this site, so no banner needed
+    shareExactLocation(ref).catch(() => {});
+    return;
+  }
+  try {
+    if (sessionStorage.getItem("sk_loc_dismissed")) return;
+  } catch { /* ignore */ }
+  pendingRef = ref;
+  emit();
+}
+
+// GPS coordinates -> readable place names (free, key-less, built for browser use)
+async function reverseGeocode(lat, lng) {
+  try {
+    const d = await fetchJson(
+      `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`
+    );
+    return {
+      city: d.locality || d.city || "",
+      region: d.principalSubdivision || "",
+      country: d.countryName || "",
+      countryCode: d.countryCode || "",
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Asks the browser for the real position and upgrades the visit record with it.
+// Rejects with the browser's error (code 1 = denied, 2 = unavailable, 3 = timed out).
+export function shareExactLocation(ref) {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(Object.assign(new Error("unsupported"), { code: 2 }));
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude, accuracy } = pos.coords;
+          const place = await reverseGeocode(latitude, longitude);
+          await updateDoc(ref, {
+            lat: latitude,
+            lng: longitude,
+            accuracy: Math.round(accuracy),
+            locationSource: "gps",
+            // The IP-based names described the carrier, not the visitor: replace them
+            city: clip(place?.city, 80),
+            region: clip(place?.region, 80),
+            country: clip(place?.country, 80),
+            countryCode: clip(place?.countryCode, 4),
+          });
+          pendingRef = null;
+          emit();
+          resolve(true);
+        } catch (e) {
+          reject(e);
+        }
+      },
+      (err) => reject(err),
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
 }
 
 // ---- Admin-side -------------------------------------------------------------
