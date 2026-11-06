@@ -1,12 +1,13 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Receipt, BarChart3, Car, LogOut, Gauge } from "lucide-react";
+import { Receipt, BarChart3, Car, LogOut, Gauge, MousePointerClick } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const links = [
   { to: "/", label: "Dashboard", icon: Gauge, end: true },
   { to: "/entries", label: "Expenses", icon: Receipt },
   { to: "/statistics", label: "Statistics", icon: BarChart3 },
-  { to: "/vehicles", label: "Vehicles", icon: Car },
+       { to: "/vehicles", label: "Vehicles", icon: Car },
+     { to: "/visits", label: "Link visits", icon: MousePointerClick },
 ];
 
 export default function Sidebar() {

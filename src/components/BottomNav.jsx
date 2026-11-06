@@ -1,17 +1,18 @@
 import { NavLink } from "react-router-dom";
-import { Gauge, Receipt, BarChart3, Car } from "lucide-react";
+import { Gauge, Receipt, BarChart3, Car, MousePointerClick } from "lucide-react";
 
 const links = [
   { to: "/", label: "Home", icon: Gauge, end: true },
   { to: "/entries", label: "Expenses", icon: Receipt },
   { to: "/statistics", label: "Stats", icon: BarChart3 },
-  { to: "/vehicles", label: "Vehicles", icon: Car },
+      { to: "/vehicles", label: "Vehicles", icon: Car },
+     { to: "/visits", label: "Visits", icon: MousePointerClick },
 ];
 
 export default function BottomNav() {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-4 border-t border-border bg-surface/95 backdrop-blur lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-surface/95 backdrop-blur lg:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
       {links.map(({ to, label, icon: Icon, end }) => (

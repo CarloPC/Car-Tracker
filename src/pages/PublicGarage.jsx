@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { Gauge, ImageOff, LinkIcon, Loader2 } from "lucide-react";
-import { fetchPublicGarage } from "../lib/sharing";
+   import { fetchPublicGarage } from "../lib/sharing";
+   import { logVisit } from "../lib/tracking";
 import { useAuth } from "../context/AuthContext";
 import { formatMoney } from "../lib/constants";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
@@ -10,7 +11,7 @@ import VehicleDetailsModal from "../components/VehicleDetailsModal";
 // Buyers browse every car; tapping one opens the same gallery + price calculator.
 export default function PublicGarage() {
   const { ownerId } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({ status: "loading", vehicles: [] });
   const [filter, setFilter] = useState("available");
@@ -24,7 +25,13 @@ export default function PublicGarage() {
     return () => {
       cancelled = true;
     };
-  }, [ownerId]);
+      }, [ownerId]);
+
+     // Log this visit once the stock has loaded (the link works) and auth has settled
+     useEffect(() => {
+       if (state.status !== "ready" || authLoading) return;
+       logVisit({ ownerId, page: "garage", targetId: ownerId, label: "Stock link", viewerUid: user?.uid });
+     }, [state.status, authLoading, ownerId, user?.uid]);
 
   const { available, sold } = useMemo(() => {
     const byRecent = (a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0);

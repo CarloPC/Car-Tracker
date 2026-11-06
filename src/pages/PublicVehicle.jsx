@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Gauge, Loader2, LinkIcon } from "lucide-react";
-import { fetchPublicVehicle } from "../lib/sharing";
+   import { fetchPublicVehicle } from "../lib/sharing";
+   import { logVisit } from "../lib/tracking";
 import { useAuth } from "../context/AuthContext";
 import VehicleDetailsModal from "../components/VehicleDetailsModal";
 
@@ -9,7 +10,7 @@ import VehicleDetailsModal from "../components/VehicleDetailsModal";
 // gallery + the interactive price calculator, and never see costs or edit controls.
 export default function PublicVehicle() {
   const { id } = useParams();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [state, setState] = useState({ status: "loading" });
 
   useEffect(() => {
@@ -21,7 +22,12 @@ export default function PublicVehicle() {
     return () => {
       cancelled = true;
     };
-  }, [id]);
+       }, [id]);
+
+     useEffect(() => {
+       if (state.status !== "ready" || authLoading) return;
+       logVisit({ ownerId: state.vehicle.ownerId, page: "vehicle", targetId: id, label: state.vehicle.name, viewerUid: user?.uid });
+     }, [state, authLoading, id, user?.uid]);
 
   return (
     <div className="min-h-screen bg-base text-ink">

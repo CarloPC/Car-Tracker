@@ -8,7 +8,8 @@ import BottomNav from "./components/BottomNav";
 import Dashboard from "./pages/Dashboard";
 import Entries from "./pages/Entries";
 import Statistics from "./pages/Statistics";
-import Vehicles from "./pages/Vehicles";
+   import Vehicles from "./pages/Vehicles";
+   import LinkVisits from "./pages/LinkVisits";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -26,7 +27,8 @@ function AppShell() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/entries" element={<Entries />} />
             <Route path="/statistics" element={<Statistics />} />
-            <Route path="/vehicles" element={<Vehicles />} />
+               <Route path="/vehicles" element={<Vehicles />} />
+               <Route path="/visits" element={<LinkVisits />} />
           </Routes>
         </div>
         <BottomNav />
