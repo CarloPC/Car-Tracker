@@ -44,7 +44,7 @@ function Stat({ label, value, sub, color, strong }) {
 
 // Inline editor on a vehicle card: type a price, profit updates instantly,
 // and it auto-saves shortly after you stop typing.
-export function SellingPriceEditor({ vehicle, invested }) {
+export function SellingPriceEditor({ vehicle, invested, displayOnly = false }) {
   const { updateVehicle } = useData();
   const saved = vehicle.sellingPrice == null ? "" : String(vehicle.sellingPrice);
   const [draft, setDraft] = useState(saved);
@@ -94,7 +94,7 @@ export function SellingPriceEditor({ vehicle, invested }) {
       <div onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}>
         <NumberField value={draft} onChange={setDraft} placeholder="Enter asking price (₱)" />
       </div>
-      <ProfitPreview sellingPrice={draft} invested={invested} />
+      {!displayOnly && <ProfitPreview sellingPrice={draft} invested={invested} />}
     </div>
   );
 }

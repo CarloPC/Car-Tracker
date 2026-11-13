@@ -240,6 +240,9 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
                   <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-ink-muted">
                     Only you can see this
                   </h3>
+                  {owner.displayOnly ? (
+                    <p className="text-center text-sm text-ink-muted">Display only — not counted in your totals or profit.</p>
+                  ) : (<>
                   <dl className="grid grid-cols-3 gap-2 text-center text-xs">
                     <Mini label="Bought for" value={formatMoney(owner.purchasePrice)} />
                     <Mini label="Expenses" value={formatMoney(owner.expenses)} />
@@ -252,6 +255,7 @@ export default function VehicleDetailsModal({ vehicle, photos = [], photosLoadin
                   ) : (
                     <ProfitPreview sellingPrice={vehicle.sellingPrice} invested={owner.invested} />
                   )}
+                  </>)}
                 </section>
               )}
             </div>

@@ -4,7 +4,7 @@ import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
 import VehicleFormModal from "../components/VehicleFormModal";
 import VehiclePhotosModal from "../components/VehiclePhotosModal";
-import { vehicleStats, portfolioTotals, isSold } from "../lib/calculations";
+import { vehicleStats, portfolioTotals, isSold, isDisplayOnly } from "../lib/calculations";
 import { SellingPriceEditor } from "../components/SellingPrice";
 import VehicleAvatar from "../components/VehicleAvatar";
 import { formatMoney, formatDate } from "../lib/constants";
@@ -47,6 +47,7 @@ function OwnerDetails({ vehicle, stats, uid, photoVersion, onClose, onShare, onE
         invested: stats.invested,
         sold: stats.sold,
         profit: stats.profit,
+        displayOnly: stats.displayOnly,
         onShare,
         onEdit,
         onPhotos,
@@ -349,16 +350,18 @@ export default function Vehicles({ onMenu }) {
 
                   <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-sm">
                     <span className="text-ink-muted">−{formatMoney(s.expenses)} expenses</span>
-                    {s.sold ? (
+                    {s.displayOnly ? (
+                      <span className="text-ink-muted">Display only · not in totals</span>
+                    ) : s.sold ? (
                       <span style={{ color: s.profit >= 0 ? "var(--color-teal)" : "var(--color-coral)" }}>
                         {s.profit >= 0 ? "+" : "−"}{formatMoney(Math.abs(s.profit))} profit
                       </span>
                     ) : (
-                      <span className="text-ink-muted">{formatMoney(s.invested)} invested</span>
+                      <span className="text-ink-muted">{isDisplayOnly(v) ? "Display only · not in totals" : `${formatMoney(s.invested)} invested`}</span>
                     )}
                   </div>
 
-                  {!s.sold && <SellingPriceEditor vehicle={v} invested={s.invested} />}
+                  {!s.sold && <SellingPriceEditor vehicle={v} invested={s.invested} displayOnly={s.displayOnly} />}
 
                   {/* Photos quick-link row */}
                   <button

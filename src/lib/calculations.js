@@ -12,6 +12,24 @@ export function isSold(vehicle) {
   return vehicle.salePrice !== undefined && vehicle.salePrice !== null && vehicle.salePrice !== "";
 }
 
+// "Display-only" cars: listed in the garage / share link but not owned by you.
+// Enter a purchase price of 0 or 1 (or leave it blank) to mark one. They are left out
+// of every total, chart and capital figure; vehicleStats() still works on them.
+export const DISPLAY_ONLY_MAX_PRICE = 1;
+
+export function isDisplayOnly(vehicle) {
+  return num(vehicle.purchasePrice) <= DISPLAY_ONLY_MAX_PRICE;
+}
+
+// Drops display-only cars and any expenses logged against them.
+export function excludeDisplayOnly(vehicles, entries = []) {
+  const hidden = new Set(vehicles.filter(isDisplayOnly).map((v) => v.id));
+  return {
+    vehicles: vehicles.filter((v) => !hidden.has(v.id)),
+    entries: entries.filter((e) => !hidden.has(e.vehicleId)),
+  };
+}
+
 export function vehicleExpenseTotal(entries, vehicleId) {
   return entries.filter((e) => e.vehicleId === vehicleId).reduce((s, e) => s + num(e.amount), 0);
 }
@@ -23,15 +41,18 @@ export function vehicleStats(vehicle, entries) {
   const sold = isSold(vehicle);
   const salePrice = sold ? num(vehicle.salePrice) : null;
   const invested = purchasePrice + expenses;
-  const profit = sold ? salePrice - invested : null;
+  const displayOnly = isDisplayOnly(vehicle);
+  // Display-only cars (purchase price 0/1) never get a profit figure
+  const profit = sold && !displayOnly ? salePrice - invested : null;
   // Projected ("if I sell at...") numbers for unsold cars with a selling price set
   const sellingPrice = !sold && num(vehicle.sellingPrice) > 0 ? num(vehicle.sellingPrice) : null;
-  const projectedProfit = sellingPrice !== null ? sellingPrice - invested : null;
-  return { purchasePrice, expenses, invested, sold, salePrice, profit, sellingPrice, projectedProfit };
+  const projectedProfit = sellingPrice !== null && !displayOnly ? sellingPrice - invested : null;
+  return { purchasePrice, expenses, invested, sold, salePrice, profit, sellingPrice, projectedProfit, displayOnly };
 }
 
 // Portfolio-wide roll-up across a set of vehicles (already scoped by the caller).
-export function portfolioTotals(vehicles, entries) {
+export function portfolioTotals(allVehicles, allEntries) {
+  const { vehicles, entries } = excludeDisplayOnly(allVehicles, allEntries);
   let bought = 0;
   let expenses = 0;
   let sold = 0;
@@ -85,7 +106,8 @@ export const CAPITAL_MODES = {
   RECYCLING: "recycling",
 };
 
-export function capitalFlow(vehicles, entries) {
+export function capitalFlow(allVehicles, allEntries) {
+  const { vehicles, entries } = excludeDisplayOnly(allVehicles, allEntries);
   const ids = new Set(vehicles.map((v) => v.id));
   const soldDate = new Map();
   for (const v of vehicles) {
@@ -151,7 +173,8 @@ export function byCategory(entries) {
 // Buckets bought / sold / expense activity into calendar months for the last
 // `months` months (inclusive of current). Bought/sold use the vehicle's
 // purchaseDate/saleDate; expenses use the entry date.
-export function monthlySeries(vehicles, entries, months = 6) {
+export function monthlySeries(allVehicles, allEntries, months = 6) {
+  const { vehicles, entries } = excludeDisplayOnly(allVehicles, allEntries);
   const now = new Date();
   const buckets = [];
   for (let i = months - 1; i >= 0; i--) {
@@ -189,7 +212,8 @@ export function monthlySeries(vehicles, entries, months = 6) {
 
 // A unified, date-sorted feed mixing "bought", "sold", and expense events —
 // used for the dashboard's recent activity list.
-export function activityFeed(vehicles, entries, limit = 6) {
+export function activityFeed(allVehicles, allEntries, limit = 6) {
+  const { vehicles, entries } = excludeDisplayOnly(allVehicles, allEntries);
   const items = [];
 
   for (const v of vehicles) {

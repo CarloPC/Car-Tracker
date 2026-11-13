@@ -140,7 +140,11 @@ export default function VehicleFormModal({ onClose, vehicle }) {
             Selling price <span className="normal-case text-ink-faint">(asking / target — not sold yet)</span>
           </div>
           <NumberField value={sellingPrice} onChange={setSellingPrice} placeholder="400,000" />
-          <ProfitPreview sellingPrice={sellingPrice} invested={invested} />
+          {Number(purchasePrice || 0) > 1 ? (
+            <ProfitPreview sellingPrice={sellingPrice} invested={invested} />
+          ) : (
+            <p className="mt-2 text-[11px] text-ink-faint">Purchase price 0 or 1 = display only: no profit is calculated and it stays out of your totals.</p>
+          )}
         </div>
 
         <div className="rounded-xl border border-border bg-surface-2 p-3.5">

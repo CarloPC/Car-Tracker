@@ -4,7 +4,7 @@ import TopBar from "../components/TopBar";
 import StatCard from "../components/StatCard";
 import ProfitGauge from "../components/ProfitGauge";
 import EntryFormModal from "../components/EntryFormModal";
-import { portfolioTotals, profitScore, activityFeed, vehicleStats, capitalFlow, CAPITAL_MODES } from "../lib/calculations";
+import { portfolioTotals, profitScore, activityFeed, vehicleStats, capitalFlow, CAPITAL_MODES, isDisplayOnly, excludeDisplayOnly } from "../lib/calculations";
 import CapitalModeToggle from "../components/CapitalModeToggle";
 import { formatMoney, formatDate, categoryLabel } from "../lib/constants";
 import { Wallet, TrendingUp, TrendingDown, Car, Plus, Receipt } from "lucide-react";
@@ -23,6 +23,8 @@ export default function Dashboard({ onMenu }) {
     [entries, activeVehicleId]
   );
 
+  // display-only cars (purchase price 0 or 1) are left out of the counts and totals
+  const own = excludeDisplayOnly(scopedVehicles, scopedEntries);
   const t = portfolioTotals(scopedVehicles, scopedEntries);
   const score = profitScore(t);
   const flow = capitalFlow(scopedVehicles, scopedEntries);
@@ -51,14 +53,14 @@ export default function Dashboard({ onMenu }) {
                 value={formatMoney(t.bought)}
                 tone="ink"
                 icon={<Wallet className="h-4 w-4 text-ink-muted" />}
-                sub={`${scopedVehicles.length} vehicle${scopedVehicles.length === 1 ? "" : "s"}`}
+                sub={`${own.vehicles.length} vehicle${own.vehicles.length === 1 ? "" : "s"}`}
               />
               <StatCard
                 label="Expenses"
                 value={formatMoney(t.expenses)}
                 tone="coral"
                 icon={<TrendingDown className="h-4 w-4" style={{ color: "var(--color-coral)" }} />}
-                sub={`${scopedEntries.length} logged`}
+                sub={`${own.entries.length} logged`}
               />
               <StatCard
                 label={recycling ? "Net Capital" : "Total Spent"}
@@ -160,12 +162,14 @@ export default function Dashboard({ onMenu }) {
                           {[v.year, v.make, v.model].filter(Boolean).join(" ") || "No details yet"}
                         </div>
                         <div className="mt-3 flex items-center justify-between text-xs">
-                          {s.sold ? (
+                          {s.displayOnly ? (
+                            <span className="text-ink-muted">Display only</span>
+                          ) : s.sold ? (
                             <span style={{ color: s.profit >= 0 ? "var(--color-teal)" : "var(--color-coral)" }}>
                               {s.profit >= 0 ? "+" : "−"}{formatMoney(Math.abs(s.profit))} profit
                             </span>
                           ) : (
-                            <span className="text-ink-muted">{formatMoney(s.invested)} invested</span>
+                            <span className="text-ink-muted">{isDisplayOnly(v) ? "Display only" : `${formatMoney(s.invested)} invested`}</span>
                           )}
                         </div>
                       </Link>

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
 import StatCard from "../components/StatCard";
-import { portfolioTotals, byCategory, monthlySeries, vehicleStats, capitalFlow, CAPITAL_MODES } from "../lib/calculations";
+import { portfolioTotals, byCategory, monthlySeries, vehicleStats, capitalFlow, CAPITAL_MODES, excludeDisplayOnly } from "../lib/calculations";
 import CapitalModeToggle from "../components/CapitalModeToggle";
 import { formatMoney, formatDate, categoryLabel, categoryColor } from "../lib/constants";
 import {
@@ -45,22 +45,24 @@ export default function Statistics({ onMenu }) {
     return scopedVehicles.filter((v) => (v.purchaseDate && v.purchaseDate >= cutoffIso) || (v.saleDate && v.saleDate >= cutoffIso));
   }, [scopedVehicles, cutoffIso]);
 
+  // display-only cars (purchase price 0 or 1) are excluded from every figure on this page
+  const own = useMemo(() => excludeDisplayOnly(rangedVehicles, scopedEntries), [rangedVehicles, scopedEntries]);
   const t = portfolioTotals(rangedVehicles, scopedEntries);
   const recycling = capitalMode === CAPITAL_MODES.RECYCLING;
   // Net capital needs the full timeline (a sale only funds a later purchase if both are seen), so it ignores the date range.
   const flow = useMemo(() => capitalFlow(scopedVehicles, entries), [scopedVehicles, entries]);
   const invested = t.bought + t.expenses;
   const avgProfit = t.soldCount > 0 ? t.profit / t.soldCount : null;
-  const expenseBreakdown = byCategory(scopedEntries);
+  const expenseBreakdown = byCategory(own.entries);
   const months = range === "365" ? 12 : range === "30" ? 3 : 6;
   const series = monthlySeries(scopedVehicles, scopedEntries, months);
 
-  const soldVehicles = scopedVehicles
+  const soldVehicles = excludeDisplayOnly(scopedVehicles).vehicles
     .map((v) => ({ vehicle: v, stats: vehicleStats(v, entries) }))
     .filter((x) => x.stats.sold)
     .sort((a, b) => b.stats.profit - a.stats.profit);
 
-  const hasData = rangedVehicles.length > 0 || scopedEntries.length > 0;
+  const hasData = own.vehicles.length > 0 || own.entries.length > 0;
 
   return (
     <div className="flex-1">
