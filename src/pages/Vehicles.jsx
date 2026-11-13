@@ -4,7 +4,7 @@ import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
 import VehicleFormModal from "../components/VehicleFormModal";
 import VehiclePhotosModal from "../components/VehiclePhotosModal";
-import { vehicleStats, portfolioTotals } from "../lib/calculations";
+import { vehicleStats, portfolioTotals, isSold } from "../lib/calculations";
 import { SellingPriceEditor } from "../components/SellingPrice";
 import VehicleAvatar from "../components/VehicleAvatar";
 import { formatMoney, formatDate } from "../lib/constants";
@@ -67,11 +67,25 @@ export default function Vehicles({ onMenu }) {
   const [photoVersion, setPhotoVersion] = useState(0); // bump to refresh profile pictures
   const [photoTouch, setPhotoTouch] = useState({ vehicleId: null, version: 0 }); // which car's photos changed
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all"); // "all" | "in-stock" | "sold"
 
   // Respect the vehicle dropdown in the TopBar ("all" shows everything)
-  const visibleVehicles = useMemo(
+  const scopedVehicles = useMemo(
     () => (activeVehicleId === "all" ? vehicles : vehicles.filter((v) => v.id === activeVehicleId)),
     [vehicles, activeVehicleId]
+  );
+
+  // ...then the In-Stock / Sold filter (sold cars are fully hidden under "In-Stock")
+  const statusCounts = useMemo(() => {
+    const sold = scopedVehicles.filter(isSold).length;
+    return { all: scopedVehicles.length, "in-stock": scopedVehicles.length - sold, sold };
+  }, [scopedVehicles]);
+  const visibleVehicles = useMemo(
+    () =>
+      statusFilter === "all"
+        ? scopedVehicles
+        : scopedVehicles.filter((v) => (statusFilter === "sold" ? isSold(v) : !isSold(v))),
+    [scopedVehicles, statusFilter]
   );
 
   const totals = portfolioTotals(visibleVehicles, entries);
@@ -163,7 +177,7 @@ export default function Vehicles({ onMenu }) {
 
   return (
     <div className="flex-1">
-      <TopBar title="Vehicles" subtitle={activeVehicleId === "all" ? `${vehicles.length} in your garage` : `Showing ${visibleVehicles.length} of ${vehicles.length}`} onMenu={onMenu} onAdd={() => setShowAdd(true)} addLabel="Add vehicle" />
+      <TopBar title="Vehicles" subtitle={activeVehicleId === "all" && statusFilter === "all" ? `${vehicles.length} in your garage` : `Showing ${visibleVehicles.length} of ${vehicles.length}`} onMenu={onMenu} onAdd={() => setShowAdd(true)} addLabel="Add vehicle" />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
         {vehicles.length === 0 ? (
@@ -211,6 +225,30 @@ export default function Vehicles({ onMenu }) {
             </div>
           </div>
 
+          {/* Status filter */}
+          <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Filter by status">
+            {[
+              { id: "all", label: "All" },
+              { id: "in-stock", label: "In-Stock" },
+              { id: "sold", label: "Sold" },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                aria-pressed={statusFilter === opt.id}
+                onClick={() => setStatusFilter(opt.id)}
+                className="rounded-full px-3.5 py-1.5 text-xs font-semibold transition-colors"
+                style={
+                  statusFilter === opt.id
+                    ? { backgroundColor: "var(--color-amber)", color: "#14171c" }
+                    : { backgroundColor: "var(--color-surface-2)", color: "var(--color-ink-muted)" }
+                }
+              >
+                {opt.label} <span className="opacity-70">{statusCounts[opt.id]}</span>
+              </button>
+            ))}
+          </div>
+
           {totals.projectedCount > 0 && (
             <div className="mb-4 grid grid-cols-2 gap-3 rounded-2xl border border-border bg-surface p-4 text-sm sm:max-w-md">
               <div>
@@ -226,6 +264,11 @@ export default function Vehicles({ onMenu }) {
               <div className="col-span-2 text-[11px] text-ink-faint">
                 Across {totals.projectedCount} unsold car{totals.projectedCount !== 1 ? "s" : ""} with a selling price
               </div>
+            </div>
+          )}
+          {visibleVehicles.length === 0 && (
+            <div className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-ink-muted">
+              No {statusFilter === "sold" ? "sold" : "in-stock"} vehicles{activeVehicleId !== "all" ? " for this selection" : ""}.
             </div>
           )}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

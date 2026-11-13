@@ -10,6 +10,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { CAPITAL_MODES } from "../lib/calculations";
 import { useAuth } from "./AuthContext";
 
 const DataContext = createContext(null);
@@ -20,6 +21,19 @@ export function DataProvider({ children }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeVehicleId, setActiveVehicleId] = useState("all");
+  // How totals are computed: "cumulative" (every purchase stacks up) or "recycling" (net capital)
+  const [capitalMode, setCapitalModeState] = useState(() => {
+    try {
+      const saved = localStorage.getItem("capitalMode");
+      return saved === CAPITAL_MODES.RECYCLING ? CAPITAL_MODES.RECYCLING : CAPITAL_MODES.CUMULATIVE;
+    } catch {
+      return CAPITAL_MODES.CUMULATIVE;
+    }
+  });
+  const setCapitalMode = (mode) => {
+    setCapitalModeState(mode);
+    try { localStorage.setItem("capitalMode", mode); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -62,6 +76,8 @@ export function DataProvider({ children }) {
       entries,
       activeVehicleId,
       setActiveVehicleId,
+      capitalMode,
+      setCapitalMode,
       loading,
 
       async addVehicle(vehicle) {
@@ -99,7 +115,7 @@ export function DataProvider({ children }) {
         await deleteDoc(doc(db, "users", user.uid, "entries", id));
       },
     }),
-    [vehicles, entries, activeVehicleId, loading, user]
+    [vehicles, entries, activeVehicleId, capitalMode, loading, user]
   );
 
   return <DataContext.Provider value={api}>{children}</DataContext.Provider>;

@@ -65,6 +65,79 @@ export function portfolioTotals(vehicles, entries) {
   return { bought, expenses, sold, profit, soldCount, stockCount, invested, projectedRevenue, projectedProfit, projectedCount };
 }
 
+// ---------------------------------------------------------------------------
+// Cash-recycling ("Net Capital") mode
+//
+// The classic total (bought + expenses) assumes every purchase is paid from
+// fresh money. In a buy-and-sell business, proceeds from a sale are used to
+// buy the next car, so the *own money* you actually need is smaller.
+//
+// We replay every cash movement in date order against a running cash balance
+// that starts at 0:
+//   purchase / expense  -> balance goes down
+//   sale                -> balance goes up
+// The deepest the balance ever dips below zero is the peak capital you had to
+// put in yourself. Example: buy A (300k + 30k expenses) -> -330k; sell A for
+// 400k -> +70k; buy B for 400k -> -330k. Peak capital = 330k, not 730k.
+// ---------------------------------------------------------------------------
+export const CAPITAL_MODES = {
+  CUMULATIVE: "cumulative",
+  RECYCLING: "recycling",
+};
+
+export function capitalFlow(vehicles, entries) {
+  const ids = new Set(vehicles.map((v) => v.id));
+  const soldDate = new Map();
+  for (const v of vehicles) {
+    if (isSold(v)) soldDate.set(v.id, v.saleDate || "9999-12-31"); // undated sale: assume latest, so it never funds anything earlier
+  }
+
+  const events = [];
+  const outflow = (vehicleId, date, amount) => {
+    if (amount <= 0) return;
+    // rank 0: costs of a car that is sold the same day (must precede its own sale)
+    // rank 2: any other cost (comes after same-day sale proceeds, so proceeds can fund it)
+    const rank = soldDate.get(vehicleId) === date ? 0 : 2;
+    events.push({ date, rank, delta: -amount });
+  };
+
+  for (const v of vehicles) {
+    outflow(v.id, v.purchaseDate || "", num(v.purchasePrice));
+    if (soldDate.has(v.id)) {
+      events.push({ date: soldDate.get(v.id), rank: 1, delta: num(v.salePrice) });
+    }
+  }
+  for (const e of entries) {
+    if (!ids.has(e.vehicleId)) continue;
+    outflow(e.vehicleId, e.date || "", num(e.amount));
+  }
+
+  events.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.rank - b.rank));
+
+  let balance = 0;
+  let peak = 0;
+  let cumulative = 0;
+  for (const ev of events) {
+    balance += ev.delta;
+    if (ev.delta < 0) cumulative -= ev.delta;
+    if (-balance > peak) peak = -balance;
+  }
+
+  return {
+    peakCapital: peak, // own money needed at the worst moment
+    cumulative, // old-style total: every purchase + expense stacked up
+    recycled: Math.max(0, cumulative - peak), // spending that was funded by earlier sales
+    outstanding: Math.max(0, -balance), // own money still out right now
+    surplus: Math.max(0, balance), // cash on hand beyond what you put in
+  };
+}
+
+// The figure shown as "total spent / capital" for the chosen mode.
+export function capitalTotal(vehicles, entries, mode) {
+  const f = capitalFlow(vehicles, entries);
+  return mode === CAPITAL_MODES.RECYCLING ? f.peakCapital : f.cumulative;
+}
+
 export function byCategory(entries) {
   const map = new Map();
   for (const e of entries) {

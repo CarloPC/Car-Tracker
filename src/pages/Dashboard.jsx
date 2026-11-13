@@ -4,13 +4,14 @@ import TopBar from "../components/TopBar";
 import StatCard from "../components/StatCard";
 import ProfitGauge from "../components/ProfitGauge";
 import EntryFormModal from "../components/EntryFormModal";
-import { portfolioTotals, profitScore, activityFeed, vehicleStats } from "../lib/calculations";
+import { portfolioTotals, profitScore, activityFeed, vehicleStats, capitalFlow, CAPITAL_MODES } from "../lib/calculations";
+import CapitalModeToggle from "../components/CapitalModeToggle";
 import { formatMoney, formatDate, categoryLabel } from "../lib/constants";
 import { Wallet, TrendingUp, TrendingDown, Car, Plus, Receipt } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function Dashboard({ onMenu }) {
-  const { vehicles, entries, activeVehicleId } = useData();
+  const { vehicles, entries, activeVehicleId, capitalMode } = useData();
   const [showAdd, setShowAdd] = useState(false);
 
   const scopedVehicles = useMemo(
@@ -24,6 +25,8 @@ export default function Dashboard({ onMenu }) {
 
   const t = portfolioTotals(scopedVehicles, scopedEntries);
   const score = profitScore(t);
+  const flow = capitalFlow(scopedVehicles, scopedEntries);
+  const recycling = capitalMode === CAPITAL_MODES.RECYCLING;
   const recent = activityFeed(scopedVehicles, scopedEntries, 6);
 
   return (
@@ -41,6 +44,7 @@ export default function Dashboard({ onMenu }) {
           <EmptyState />
         ) : (
           <>
+            <CapitalModeToggle className="mb-4" />
             <div className="grid gap-4 lg:grid-cols-[1fr_1fr_1fr_1fr_auto]">
               <StatCard
                 label="Bought"
@@ -57,11 +61,11 @@ export default function Dashboard({ onMenu }) {
                 sub={`${scopedEntries.length} logged`}
               />
               <StatCard
-                label="Total Spent"
-                value={formatMoney(t.bought + t.expenses)}
+                label={recycling ? "Net Capital" : "Total Spent"}
+                value={formatMoney(recycling ? flow.peakCapital : t.bought + t.expenses)}
                 tone="coral"
                 icon={<Receipt className="h-4 w-4" style={{ color: "var(--color-coral)" }} />}
-                sub="Bought + expenses"
+                sub={recycling ? `Peak own money · ${formatMoney(flow.recycled)} recycled` : "Bought + expenses"}
               />
               <StatCard
                 label="Sold"

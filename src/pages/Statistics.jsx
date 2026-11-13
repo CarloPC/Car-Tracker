@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useData } from "../context/DataContext";
 import TopBar from "../components/TopBar";
 import StatCard from "../components/StatCard";
-import { portfolioTotals, byCategory, monthlySeries, vehicleStats } from "../lib/calculations";
+import { portfolioTotals, byCategory, monthlySeries, vehicleStats, capitalFlow, CAPITAL_MODES } from "../lib/calculations";
+import CapitalModeToggle from "../components/CapitalModeToggle";
 import { formatMoney, formatDate, categoryLabel, categoryColor } from "../lib/constants";
 import {
   ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -17,7 +18,7 @@ const RANGE_OPTIONS = [
 ];
 
 export default function Statistics({ onMenu }) {
-  const { vehicles, entries, activeVehicleId } = useData();
+  const { vehicles, entries, activeVehicleId, capitalMode } = useData();
   const [range, setRange] = useState("90");
 
   const scopedVehicles = useMemo(
@@ -45,6 +46,9 @@ export default function Statistics({ onMenu }) {
   }, [scopedVehicles, cutoffIso]);
 
   const t = portfolioTotals(rangedVehicles, scopedEntries);
+  const recycling = capitalMode === CAPITAL_MODES.RECYCLING;
+  // Net capital needs the full timeline (a sale only funds a later purchase if both are seen), so it ignores the date range.
+  const flow = useMemo(() => capitalFlow(scopedVehicles, entries), [scopedVehicles, entries]);
   const invested = t.bought + t.expenses;
   const avgProfit = t.soldCount > 0 ? t.profit / t.soldCount : null;
   const expenseBreakdown = byCategory(scopedEntries);
@@ -63,6 +67,7 @@ export default function Statistics({ onMenu }) {
       <TopBar title="Statistics" subtitle="What you bought cars for, spent on them, and sold them for" onMenu={onMenu} />
 
       <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8">
+        <CapitalModeToggle className="mb-3" />
         <div className="mb-5 flex flex-wrap gap-2">
           {RANGE_OPTIONS.map((opt) => (
             <button
@@ -87,7 +92,11 @@ export default function Statistics({ onMenu }) {
         ) : (
           <>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard label="Total invested" value={formatMoney(invested)} sub="Bought + expenses" />
+              {recycling ? (
+                <StatCard label="Net capital" value={formatMoney(flow.peakCapital)} sub={`All time · ${formatMoney(flow.recycled)} recycled from sales`} />
+              ) : (
+                <StatCard label="Total invested" value={formatMoney(invested)} sub="Bought + expenses" />
+              )}
               <StatCard label="Total sales" value={formatMoney(t.sold)} tone="teal" sub={`${t.soldCount} car${t.soldCount === 1 ? "" : "s"} sold`} />
               <StatCard label="Net profit" value={formatMoney(t.profit)} tone={t.profit >= 0 ? "teal" : "coral"} sub="Realized, sold cars only" />
               <StatCard label="Avg. profit / car" value={avgProfit === null ? "—" : formatMoney(avgProfit)} tone={avgProfit >= 0 ? "teal" : "coral"} sub={avgProfit === null ? "No sales yet" : "Per sold vehicle"} />
